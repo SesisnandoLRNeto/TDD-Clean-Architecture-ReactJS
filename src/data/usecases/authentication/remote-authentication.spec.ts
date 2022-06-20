@@ -4,6 +4,9 @@ import { faker } from "@faker-js/faker";
 import { mockAuthentication } from "@/domain/tests/mocks/mock-authentication";
 import { InvalidCredentialsError } from "@/domain/errors/invalid-credentials-error";
 import { HttpStatusCodeType } from "@/data/protocols/http/http-responses";
+import { UnexpectedError } from "@/domain/errors/unexpected-error";
+import { NotFoundError } from "@/domain/errors/not-found-error";
+import { ServerError } from "@/domain/errors/server-error";
 
 type SutTypes = {
   sut: RemoteAuthentication;
@@ -41,12 +44,51 @@ describe("RemoteAuthentication", () => {
     const { sut, httpPostClientSpy } = makeSut();
 
     httpPostClientSpy.result = {
-      statusCode: HttpStatusCodeType.unauthorized,
+      statusCode: HttpStatusCodeType.UNAUTHORIZED,
     };
 
     const authenticationParams = mockAuthentication();
     const promise = sut.auth(authenticationParams);
 
     await expect(promise).rejects.toThrow(new InvalidCredentialsError());
+  });
+
+  test("Should throw UnexpectedError if HttpPostClient returns 400", async () => {
+    const { sut, httpPostClientSpy } = makeSut();
+
+    httpPostClientSpy.result = {
+      statusCode: HttpStatusCodeType.BAD_REQUEST,
+    };
+
+    const authenticationParams = mockAuthentication();
+    const promise = sut.auth(authenticationParams);
+
+    await expect(promise).rejects.toThrow(new UnexpectedError());
+  });
+
+  test("Should throw NotFoundError if HttpPostClient returns 404", async () => {
+    const { sut, httpPostClientSpy } = makeSut();
+
+    httpPostClientSpy.result = {
+      statusCode: HttpStatusCodeType.NOT_FOUND,
+    };
+
+    const authenticationParams = mockAuthentication();
+    const promise = sut.auth(authenticationParams);
+
+    await expect(promise).rejects.toThrow(new NotFoundError());
+  });
+
+  test("Should throw ServerError if HttpPostClient returns 400", async () => {
+    const { sut, httpPostClientSpy } = makeSut();
+
+    httpPostClientSpy.result = {
+      statusCode: HttpStatusCodeType.SERVER_ERROR,
+    };
+
+    const authenticationParams = mockAuthentication();
+    const promise = sut.auth(authenticationParams);
+
+    await expect(promise).rejects.toThrow(new ServerError());
   });
 });
